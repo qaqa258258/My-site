@@ -8,7 +8,7 @@
     <!-- 引入 Google Fonts 高级衬线体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         /* --- 顶级奢华变量定义 --- */
@@ -20,6 +20,7 @@
             --text-muted: #888;
             --font-serif: 'Playfair Display', serif;
             --font-display: 'Cinzel', serif;
+            --font-chinese: 'Noto Serif SC', serif;
         }
 
         body {
@@ -34,7 +35,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 通用链接样式 */
         a { color: inherit; text-decoration: none; transition: color 0.3s; }
         a:hover { color: var(--accent-gold); }
 
@@ -45,15 +45,36 @@
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
-        /* --- 页面容器 (用于切换页面) --- */
+        /* --- 页面切换容器 (修复版) --- */
         .page-view {
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
             width: 100%; min-height: 100vh;
             position: absolute; top: 0; left: 0;
             padding-bottom: 100px;
+            /* 增加 visibility 过渡，防止点击穿透 */
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.6s;
         }
-        .page-hidden { opacity: 0; pointer-events: none; transform: scale(0.98); z-index: -1; position: fixed; }
-        .page-active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 1; position: relative; }
+        
+        /* 隐藏状态：完全移出交互流 */
+        .page-hidden { 
+            opacity: 0; 
+            pointer-events: none; 
+            transform: scale(0.98); 
+            z-index: -1; 
+            position: fixed; 
+            visibility: hidden; /* 关键修复：确保不可见时不可点击 */
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.6s; /* 延迟隐藏 visibility */
+        }
+        
+        /* 显示状态 */
+        .page-active { 
+            opacity: 1; 
+            pointer-events: auto; 
+            transform: scale(1); 
+            z-index: 1; 
+            position: relative; 
+            visibility: visible;
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0s; /* 立即显示 */
+        }
 
         /* --- 顶部品牌栏 --- */
         header {
@@ -115,12 +136,45 @@
         .nav-overlay.active .nav-links li:nth-child(4) { transition-delay: 0.4s; opacity: 1; transform: translateY(0); }
         
         .nav-links a {
-            /* 改回中文后，这里字体可以稍微小一点，或者保持霸气 */
-            font-family: "Noto Serif SC", serif; font-weight: 700;
+            font-family: var(--font-chinese); font-weight: 700;
             font-size: 2.5rem; color: #fff; letter-spacing: 4px; transition: color 0.3s;
         }
         .nav-links a:hover { color: var(--accent-gold); }
         .nav-links span { display: block; font-family: 'Helvetica Neue', sans-serif; font-size: 0.7rem; color: #555; letter-spacing: 2px; margin-top: 5px; text-transform: uppercase; }
+
+        /* --- 竞拍进度弹窗 (新功能) --- */
+        .bid-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); z-index: 10000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        .bid-overlay.active { opacity: 1; visibility: visible; }
+        
+        .bid-modal {
+            width: 80%; max-width: 400px; text-align: center;
+            color: #fff; font-family: var(--font-chinese);
+        }
+        .bid-title { font-size: 1.2rem; margin-bottom: 20px; color: var(--accent-gold); letter-spacing: 2px; }
+        .progress-container {
+            width: 100%; height: 2px; background: #333; margin-bottom: 15px; position: relative;
+            overflow: hidden;
+        }
+        .progress-bar {
+            width: 0%; height: 100%; background: var(--accent-gold);
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 10px var(--accent-gold);
+        }
+        .bid-status { font-size: 0.8rem; color: #888; margin-bottom: 30px; min-height: 1.2em; }
+        .bid-result { font-size: 1rem; line-height: 1.6; color: #fff; margin-bottom: 30px; display: none; animation: fadeUp 0.5s ease; }
+        .modal-close-btn {
+            background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold);
+            padding: 10px 30px; cursor: pointer; font-family: var(--font-chinese);
+            transition: all 0.3s; display: none;
+        }
+        .modal-close-btn:hover { background: var(--accent-gold); color: #000; }
+
 
         /* --- 画廊列表 --- */
         .gallery-wrapper { width: 100%; padding-top: 180px; display: flex; justify-content: center; }
@@ -134,7 +188,6 @@
         .lot-item:nth-child(5) { animation-delay: 0.9s; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 博物馆级装裱 */
         .frame-assembly {
             position: relative; background-color: #f4f0e6; padding: 60px; 
             border: 15px solid #1a1a1a; outline: 1px solid #cfb53b; outline-offset: -8px; 
@@ -152,8 +205,6 @@
             object-fit: cover; filter: sepia(5%) contrast(1.1) brightness(0.95); 
             position: relative; z-index: 1; box-shadow: 0 1px 5px rgba(0,0,0,0.15);
         }
-        
-        /* 流光特效 */
         .frame-assembly::after {
             content: ''; position: absolute; top: 0; left: -150%; width: 80%; height: 100%;
             background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 60%, rgba(255,255,255,0) 100%);
@@ -175,7 +226,7 @@
         
         .lot-title {
             font-size: 1.4rem; font-style: italic; color: #fff; margin: 0 0 10px 0;
-            letter-spacing: 1px; font-family: "Noto Serif SC", serif; /* 中文标题字体 */
+            letter-spacing: 1px; font-family: var(--font-chinese);
         }
         .lot-price { font-family: 'Helvetica Neue', sans-serif; font-size: 0.8rem; color: #888; letter-spacing: 1px; font-weight: 300; }
         .click-hint { font-size: 0.7rem; color: var(--accent-gold); margin-top: 15px; letter-spacing: 1px; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; }
@@ -197,7 +248,7 @@
 
         .detail-info-wrapper { flex: 1; padding-top: 20px; }
         .detail-lot-no { color: var(--accent-gold); letter-spacing: 2px; font-size: 0.8rem; margin-bottom: 20px; display: block; }
-        .detail-title { font-family: "Noto Serif SC", serif; font-size: 2.5rem; margin: 0 0 10px 0; line-height: 1.2; color: #fff; }
+        .detail-title { font-family: var(--font-chinese); font-size: 2.5rem; margin: 0 0 10px 0; line-height: 1.2; color: #fff; }
         .detail-eng-title { font-family: var(--font-serif); font-size: 1.2rem; font-style: italic; color: #666; margin-bottom: 30px; display: block; }
         
         .detail-meta { border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 20px 0; margin-bottom: 30px; display: flex; justify-content: space-between; }
@@ -222,10 +273,8 @@
         }
         .back-btn:hover { color: #fff; }
 
-        /* 底部 */
         footer { text-align: center; padding: 50px 0; color: #444; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 50px; }
 
-        /* 移动端适配 */
         @media (max-width: 768px) {
             header { padding: 20px; flex-direction: row; align-items: center; gap: 0; }
             .auction-date { display: none; }
@@ -251,7 +300,20 @@
     <div class="noise-overlay"></div>
     <div class="dust-container" id="dustContainer"></div>
 
-    <!-- 全屏导航菜单 (中文版) -->
+    <!-- 竞拍进度全屏弹窗 -->
+    <div class="bid-overlay" id="bidOverlay">
+        <div class="bid-modal">
+            <div class="bid-title">PROCESSING BID...</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="bidProgressBar"></div>
+            </div>
+            <div class="bid-status" id="bidStatus">初始化连接...</div>
+            <div class="bid-result" id="bidResult"></div>
+            <button class="modal-close-btn" id="bidCloseBtn" onclick="closeBidModal()">关闭窗口</button>
+        </div>
+    </div>
+
+    <!-- 全屏导航菜单 -->
     <div class="nav-overlay" id="navOverlay">
         <div class="close-btn" onclick="toggleMenu()">&times;</div>
         <ul class="nav-links">
@@ -353,7 +415,7 @@
         </footer>
     </div>
 
-    <!-- 页面 2: 详情页 (动态内容) -->
+    <!-- 页面 2: 详情页 -->
     <div id="view-detail" class="page-view page-hidden">
         
         <div class="back-btn" onclick="switchPage('home')">
@@ -391,13 +453,12 @@
                     <p id="detail-condition">状况加载中...</p>
                 </div>
 
-                <button class="bid-btn" onclick="randomBidAlert()">参与竞拍 / PLACE BID</button>
+                <button class="bid-btn" onclick="startBidding()">参与竞拍 / PLACE BID</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 数据中心：每一只猫的详细档案 ---
         const lotsData = {
             1: {
                 lotNo: "LOT 081",
@@ -461,12 +522,10 @@
             }
         };
 
-        // --- 核心功能：展示详情页 ---
         function showDetail(id) {
             const data = lotsData[id];
             if (!data) return;
 
-            // 1. 填充数据
             document.getElementById('detail-img').src = data.img;
             document.getElementById('detail-lot-no').innerText = data.lotNo;
             document.getElementById('detail-title').innerText = data.title;
@@ -478,11 +537,9 @@
             document.getElementById('detail-provenance').innerHTML = data.provenance;
             document.getElementById('detail-condition').innerHTML = data.condition;
 
-            // 2. 切换页面
             switchPage('detail');
         }
 
-        // --- 页面切换逻辑 ---
         function switchPage(pageName) {
             const homeView = document.getElementById('view-home');
             const detailView = document.getElementById('view-detail');
@@ -502,25 +559,66 @@
             }
         }
 
-        // --- 导航菜单开关 ---
         function toggleMenu() {
             document.getElementById('navOverlay').classList.toggle('active');
         }
 
-        // --- 搞笑出价反馈 ---
-        function randomBidAlert() {
-            const alerts = [
-                "出价成功！您出价：500个顶级罐头。",
-                "出价失败：由于您的信誉分不足（上次没给猫撸），系统拒绝了您的请求。",
-                "警告：由于您出价过高，猫咪表示压力很大，躲到了床底下。",
-                "恭喜！您现在是最高出价者，代价是出卖灵魂给猫主子。",
-                "系统错误：检测到您家里已经有狗了，禁止竞拍。"
-            ];
-            const randomMsg = alerts[Math.floor(Math.random() * alerts.length)];
-            alert(randomMsg);
+        // --- 新版：竞拍进度条动画逻辑 ---
+        function startBidding() {
+            const overlay = document.getElementById('bidOverlay');
+            const bar = document.getElementById('bidProgressBar');
+            const status = document.getElementById('bidStatus');
+            const result = document.getElementById('bidResult');
+            const closeBtn = document.getElementById('bidCloseBtn');
+            
+            // 重置状态
+            overlay.classList.add('active');
+            bar.style.width = '0%';
+            status.innerText = "正在连接喵星卫星 (MeowSat-1)...";
+            result.style.display = 'none';
+            closeBtn.style.display = 'none';
+            
+            // 模拟进度动画
+            setTimeout(() => {
+                bar.style.width = '30%';
+                status.innerText = "正在验证猫粮余额 (Checking Balance)...";
+            }, 600);
+
+            setTimeout(() => {
+                bar.style.width = '70%';
+                status.innerText = "正在贿赂拍卖官 (Bribing Auctioneer)...";
+            }, 1500);
+
+            setTimeout(() => {
+                bar.style.width = '100%';
+                status.innerText = "竞拍完成";
+                showBidResult(); // 进度条跑完显示结果
+            }, 2600);
         }
 
-        // --- 特效: 尘埃 ---
+        function showBidResult() {
+            const alerts = [
+                "竞拍成功！<br>您出价：500个顶级金枪鱼罐头。<br>猫咪表示考虑一下。",
+                "竞拍失败。<br>理由：您的信誉分不足（上次撸猫没给小费）。<br>系统拒绝了您的请求。",
+                "警告！<br>由于您出价过高，猫咪感到压力很大，<br>已经躲到了床底下。",
+                "恭喜！<br>您现在是最高出价者。<br>代价是出卖灵魂给猫主子，终身铲屎。",
+                "系统错误。<br>检测到您家里已经有狗了。<br>根据《喵星反垄断法》，禁止竞拍。",
+                "成交！<br>您获得了一根珍贵的猫胡须。<br>请在3个工作日内支付小鱼干。"
+            ];
+            const randomMsg = alerts[Math.floor(Math.random() * alerts.length)];
+            
+            const result = document.getElementById('bidResult');
+            const closeBtn = document.getElementById('bidCloseBtn');
+            
+            result.innerHTML = randomMsg;
+            result.style.display = 'block';
+            closeBtn.style.display = 'inline-block';
+        }
+
+        function closeBidModal() {
+            document.getElementById('bidOverlay').classList.remove('active');
+        }
+
         const dustContainer = document.getElementById('dustContainer');
         for (let i = 0; i < 30; i++) {
             const dust = document.createElement('div');
