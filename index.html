@@ -2,20 +2,20 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>THE MEOW COLLECTION | 顶级猫咪藏品拍卖</title>
     
-    <!-- 引入 Google Fonts 高级衬线体 -->
+    <!-- 引入 Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- 顶级奢华变量定义 --- */
+        /* --- 基础设置 --- */
         :root {
-            --bg-color: #0a0a0a; /* 极致深黑 */
+            --bg-color: #0a0a0a;
             --card-bg: #141414;
-            --accent-gold: #cfb53b; /* 香槟金 */
+            --accent-gold: #cfb53b;
             --text-main: #f0f0f0;
             --text-muted: #888;
             --font-serif: 'Playfair Display', serif;
@@ -24,8 +24,7 @@
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--bg-color);
             font-family: var(--font-serif);
             color: var(--text-main);
@@ -33,603 +32,450 @@
             min-height: 100vh;
             cursor: default; 
             -webkit-tap-highlight-color: transparent;
+            /* 手机端防回弹效果 */
+            overscroll-behavior-y: none; 
         }
 
-        a { color: inherit; text-decoration: none; transition: color 0.3s; }
-        a:hover { color: var(--accent-gold); }
-
-        /* --- 特效: 胶片颗粒噪点背景 --- */
+        /* --- 特效: 胶片噪点 --- */
         .noise-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 999; opacity: 0.04; 
+            pointer-events: none; z-index: 0; opacity: 0.04; 
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
-        /* --- 页面切换容器 (修复版) --- */
+        /* --- 页面容器 (核心交互) --- */
         .page-view {
             width: 100%; min-height: 100vh;
             position: absolute; top: 0; left: 0;
             padding-bottom: 100px;
-            /* 增加 visibility 过渡，防止点击穿透 */
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.6s;
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+            z-index: 1;
         }
         
-        /* 隐藏状态：完全移出交互流 */
         .page-hidden { 
-            opacity: 0; 
-            pointer-events: none; 
-            transform: scale(0.98); 
-            z-index: -1; 
-            position: fixed; 
-            visibility: hidden; /* 关键修复：确保不可见时不可点击 */
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.6s; /* 延迟隐藏 visibility */
+            opacity: 0; pointer-events: none; visibility: hidden; 
+            transform: translateY(20px); /* 加上一点位移让切换更有动感 */
+            position: fixed; /* 彻底脱离文档流 */
         }
-        
-        /* 显示状态 */
         .page-active { 
-            opacity: 1; 
-            pointer-events: auto; 
-            transform: scale(1); 
-            z-index: 1; 
-            position: relative; 
-            visibility: visible;
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0s; /* 立即显示 */
+            opacity: 1; pointer-events: auto; visibility: visible; 
+            transform: translateY(0);
+            position: absolute; /* 恢复 */
         }
 
-        /* --- 顶部品牌栏 --- */
+        /* --- 顶部导航栏 --- */
         header {
             position: fixed; top: 0; left: 0; width: 100%;
-            box-sizing: border-box; padding: 30px 50px;
-            display: flex; justify-content: space-between; align-items: flex-start;
+            box-sizing: border-box; padding: 20px 5%;
+            display: flex; justify-content: space-between; align-items: center;
             z-index: 100;
-            background: linear-gradient(to bottom, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.8) 60%, rgba(10,10,10,0) 100%);
-            backdrop-filter: blur(2px);
+            background: linear-gradient(to bottom, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.8) 80%, rgba(10,10,10,0) 100%);
+            backdrop-filter: blur(4px);
         }
-        .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 15px; }
 
         h1 {
-            font-family: var(--font-display); font-weight: 400; font-size: 1.5rem;
-            letter-spacing: 5px; margin: 0; color: #fff; text-transform: uppercase;
-            cursor: pointer;
+            font-family: var(--font-display); font-weight: 400; font-size: 1.1rem;
+            letter-spacing: 2px; margin: 0; color: #fff; text-transform: uppercase;
         }
         .brand-subtitle {
-            font-family: 'Helvetica Neue', sans-serif; font-size: 0.65rem;
-            color: var(--accent-gold); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px;
-        }
-        .auction-date {
-            text-align: right; font-size: 0.7rem; color: var(--text-muted);
-            letter-spacing: 1px; margin-top: 5px;
+            font-family: 'Helvetica Neue', sans-serif; font-size: 0.5rem;
+            color: var(--accent-gold); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;
         }
 
-        /* --- 菜单按钮 --- */
         .menu-btn {
-            cursor: pointer; display: flex; align-items: center; gap: 10px;
-            font-family: 'Helvetica Neue', sans-serif; font-size: 0.7rem; letter-spacing: 2px;
-            color: #fff; text-transform: uppercase;
-            border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px;
-            transition: all 0.3s ease; background: rgba(0,0,0,0.3);
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            font-family: 'Helvetica Neue', sans-serif; font-size: 0.6rem; letter-spacing: 1px;
+            color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px;
+            background: rgba(0,0,0,0.3); border-radius: 2px;
         }
-        .menu-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(0,0,0,0.8); }
-        .hamburger-lines { width: 18px; display: flex; flex-direction: column; gap: 4px; }
-        .line { width: 100%; height: 1px; background-color: currentColor; }
+        .hamburger-lines { width: 14px; display: flex; flex-direction: column; gap: 3px; }
+        .line { width: 100%; height: 1px; background-color: #fff; }
 
         /* --- 全屏导航遮罩 --- */
         .nav-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(10, 10, 10, 0.98); z-index: 9999; 
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            opacity: 0; visibility: hidden; transition: opacity 0.5s ease, visibility 0.5s;
+            opacity: 0; visibility: hidden; transition: 0.3s;
         }
         .nav-overlay.active { opacity: 1; visibility: visible; }
         .close-btn {
-            position: absolute; top: 40px; right: 50px;
-            font-family: 'Helvetica Neue', sans-serif; font-size: 2rem; color: #666;
-            cursor: pointer; transition: color 0.3s;
+            position: absolute; top: 30px; right: 30px; font-size: 2rem; color: #666; padding: 10px;
         }
-        .close-btn:hover { color: var(--accent-gold); }
-        
         .nav-links { list-style: none; padding: 0; margin: 0; text-align: center; }
-        .nav-links li { margin: 30px 0; opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
-        .nav-overlay.active .nav-links li:nth-child(1) { transition-delay: 0.1s; opacity: 1; transform: translateY(0); }
-        .nav-overlay.active .nav-links li:nth-child(2) { transition-delay: 0.2s; opacity: 1; transform: translateY(0); }
-        .nav-overlay.active .nav-links li:nth-child(3) { transition-delay: 0.3s; opacity: 1; transform: translateY(0); }
-        .nav-overlay.active .nav-links li:nth-child(4) { transition-delay: 0.4s; opacity: 1; transform: translateY(0); }
-        
-        .nav-links a {
-            font-family: var(--font-chinese); font-weight: 700;
-            font-size: 2.5rem; color: #fff; letter-spacing: 4px; transition: color 0.3s;
-        }
-        .nav-links a:hover { color: var(--accent-gold); }
-        .nav-links span { display: block; font-family: 'Helvetica Neue', sans-serif; font-size: 0.7rem; color: #555; letter-spacing: 2px; margin-top: 5px; text-transform: uppercase; }
+        .nav-links li { margin: 25px 0; opacity: 0; transform: translateY(10px); transition: 0.4s; }
+        .nav-overlay.active .nav-links li { opacity: 1; transform: translateY(0); }
+        /* 依次延迟 */
+        .nav-overlay.active li:nth-child(1) { transition-delay: 0.1s; }
+        .nav-overlay.active li:nth-child(2) { transition-delay: 0.15s; }
+        .nav-overlay.active li:nth-child(3) { transition-delay: 0.2s; }
+        .nav-overlay.active li:nth-child(4) { transition-delay: 0.25s; }
+        .nav-links a { font-family: var(--font-chinese); font-size: 1.8rem; color: #fff; }
 
-        /* --- 竞拍进度弹窗 (新功能) --- */
-        .bid-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.9); z-index: 10000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s;
-            backdrop-filter: blur(5px);
-        }
-        .bid-overlay.active { opacity: 1; visibility: visible; }
-        
-        .bid-modal {
-            width: 80%; max-width: 400px; text-align: center;
-            color: #fff; font-family: var(--font-chinese);
-        }
-        .bid-title { font-size: 1.2rem; margin-bottom: 20px; color: var(--accent-gold); letter-spacing: 2px; }
-        .progress-container {
-            width: 100%; height: 2px; background: #333; margin-bottom: 15px; position: relative;
-            overflow: hidden;
-        }
-        .progress-bar {
-            width: 0%; height: 100%; background: var(--accent-gold);
-            transition: width 0.5s ease-out;
-            box-shadow: 0 0 10px var(--accent-gold);
-        }
-        .bid-status { font-size: 0.8rem; color: #888; margin-bottom: 30px; min-height: 1.2em; }
-        .bid-result { font-size: 1rem; line-height: 1.6; color: #fff; margin-bottom: 30px; display: none; animation: fadeUp 0.5s ease; }
-        .modal-close-btn {
-            background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold);
-            padding: 10px 30px; cursor: pointer; font-family: var(--font-chinese);
-            transition: all 0.3s; display: none;
-        }
-        .modal-close-btn:hover { background: var(--accent-gold); color: #000; }
+        /* --- 首页画廊列表 --- */
+        .gallery-wrapper { width: 100%; padding-top: 100px; padding-bottom: 50px; }
+        .gallery-container { display: flex; flex-direction: column; align-items: center; gap: 80px; }
 
+        .lot-item { 
+            position: relative; width: 90%; max-width: 500px;
+            animation: fadeUp 0.8s ease forwards; 
+        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 画廊列表 --- */
-        .gallery-wrapper { width: 100%; padding-top: 180px; display: flex; justify-content: center; }
-        .gallery-container { display: flex; flex-direction: column; align-items: center; gap: 15vh; }
-
-        .lot-item { position: relative; opacity: 0; animation: fadeUp 1.2s ease forwards; cursor: pointer; }
-        .lot-item:nth-child(1) { animation-delay: 0.1s; }
-        .lot-item:nth-child(2) { animation-delay: 0.3s; }
-        .lot-item:nth-child(3) { animation-delay: 0.5s; }
-        .lot-item:nth-child(4) { animation-delay: 0.7s; }
-        .lot-item:nth-child(5) { animation-delay: 0.9s; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
-
+        /* 首页相框 (保持高级感) */
         .frame-assembly {
-            position: relative; background-color: #f4f0e6; padding: 60px; 
-            border: 15px solid #1a1a1a; outline: 1px solid #cfb53b; outline-offset: -8px; 
-            box-shadow: 0 30px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(50,50,50,1); 
-            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.6s ease;
-            overflow: hidden; 
+            position: relative; background-color: #f4f0e6; padding: 30px; 
+            border: 8px solid #1a1a1a; outline: 1px solid #cfb53b; outline-offset: -4px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
         }
         .frame-assembly::before {
-            content: ''; position: absolute; top: 60px; bottom: 60px; left: 60px; right: 60px; 
-            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.4), inset -1px -1px 2px rgba(255,255,255,0.3); 
-            border: 1px solid rgba(0,0,0,0.1); pointer-events: none; z-index: 5;
+            content: ''; position: absolute; top: 30px; bottom: 30px; left: 30px; right: 30px; 
+            box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3); border: 1px solid rgba(0,0,0,0.1); pointer-events: none; z-index: 2;
         }
+        
+        /* 图片统一 */
         .artwork {
-            display: block; width: clamp(300px, 70vw, 500px); height: clamp(400px, 60vh, 700px);
-            object-fit: cover; filter: sepia(5%) contrast(1.1) brightness(0.95); 
-            position: relative; z-index: 1; box-shadow: 0 1px 5px rgba(0,0,0,0.15);
-        }
-        .frame-assembly::after {
-            content: ''; position: absolute; top: 0; left: -150%; width: 80%; height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 60%, rgba(255,255,255,0) 100%);
-            transform: skewX(-20deg); z-index: 10; pointer-events: none; transition: left 0.8s ease;
+            display: block; width: 100%; height: auto; aspect-ratio: 3/4;
+            object-fit: cover; filter: sepia(5%) contrast(1.1); 
+            position: relative; z-index: 1;
         }
 
-        .lot-info {
-            margin-top: 40px; text-align: center; opacity: 0.6; transform: translateY(10px);
-            transition: all 0.5s ease; max-width: 90vw; margin-left: auto; margin-right: auto;
-        }
-        .lot-number {
-            font-family: 'Helvetica Neue', sans-serif; font-size: 0.6rem; color: var(--accent-gold);
-            letter-spacing: 3px; font-weight: bold; margin-bottom: 10px; display: inline-block; position: relative;
-        }
-        .lot-number::before, .lot-number::after {
-            content: ''; position: absolute; top: 50%; width: 20px; height: 1px; background-color: #333;
-        }
-        .lot-number::before { left: -30px; } .lot-number::after { right: -30px; }
-        
-        .lot-title {
-            font-size: 1.4rem; font-style: italic; color: #fff; margin: 0 0 10px 0;
-            letter-spacing: 1px; font-family: var(--font-chinese);
-        }
-        .lot-price { font-family: 'Helvetica Neue', sans-serif; font-size: 0.8rem; color: #888; letter-spacing: 1px; font-weight: 300; }
-        .click-hint { font-size: 0.7rem; color: var(--accent-gold); margin-top: 15px; letter-spacing: 1px; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; }
+        /* 首页信息 */
+        .lot-info { text-align: center; margin-top: 25px; opacity: 0.8; }
+        .lot-number { font-size: 0.6rem; color: var(--accent-gold); letter-spacing: 2px; display: block; margin-bottom: 5px; }
+        .lot-title { font-family: var(--font-chinese); font-size: 1.3rem; color: #fff; margin: 0 0 5px 0; }
+        .lot-price { font-size: 0.7rem; color: #666; font-family: 'Helvetica Neue'; }
 
-        .lot-item:hover .frame-assembly { transform: scale(1.02); box-shadow: 0 40px 100px rgba(0,0,0,1), 0 0 0 1px #cfb53b; border-color: #080808; }
-        .lot-item:hover .frame-assembly::after { left: 150%; }
-        .lot-item:hover .lot-info { opacity: 1; transform: translateY(0); }
-        .lot-item:hover .lot-title { color: var(--accent-gold); }
-        .lot-item:hover .click-hint { opacity: 1; }
-
-        /* --- 详情页样式 --- */
-        #view-detail { padding-top: 160px; padding-left: 50px; padding-right: 50px; display: flex; justify-content: center; }
-        .detail-container { max-width: 1200px; width: 100%; display: flex; gap: 80px; align-items: flex-start; }
-        
-        .detail-image-wrapper { flex: 1; position: sticky; top: 120px; }
-        .detail-image-wrapper .frame-assembly { padding: 40px; border-width: 2px; outline: none; box-shadow: none; background: none; }
-        .detail-image-wrapper .frame-assembly::before { display: none; } 
-        .detail-image-wrapper .artwork { width: 100%; height: auto; max-height: 80vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
-        .detail-info-wrapper { flex: 1; padding-top: 20px; }
-        .detail-lot-no { color: var(--accent-gold); letter-spacing: 2px; font-size: 0.8rem; margin-bottom: 20px; display: block; }
-        .detail-title { font-family: var(--font-chinese); font-size: 2.5rem; margin: 0 0 10px 0; line-height: 1.2; color: #fff; }
-        .detail-eng-title { font-family: var(--font-serif); font-size: 1.2rem; font-style: italic; color: #666; margin-bottom: 30px; display: block; }
-        
-        .detail-meta { border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 20px 0; margin-bottom: 30px; display: flex; justify-content: space-between; }
-        .detail-meta div { font-size: 0.8rem; color: #888; }
-        .detail-meta strong { color: #ccc; display: block; margin-bottom: 5px; letter-spacing: 1px; }
-        
-        .detail-desc p { font-size: 1rem; line-height: 1.8; color: #bbb; margin-bottom: 20px; }
-        .detail-subtitle { font-size: 0.8rem; text-transform: uppercase; color: var(--accent-gold); margin-top: 40px; margin-bottom: 15px; letter-spacing: 1px; border-left: 2px solid var(--accent-gold); padding-left: 10px; }
-        
-        .bid-btn {
-            display: block; width: 100%; background: var(--accent-gold); color: #000; 
-            text-align: center; padding: 20px; margin-top: 40px; 
-            font-family: var(--font-display); font-size: 1.2rem; letter-spacing: 2px; 
-            cursor: pointer; transition: all 0.3s; border: none;
+        /* --- 详情页 (Mobile Optimized) --- */
+        #view-detail { 
+            /* 去掉多余的顶部 padding，利用 sticky header */
+            padding: 0; 
+            background: var(--bg-color);
         }
-        .bid-btn:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-
+        
+        .back-bar {
+            position: fixed; top: 80px; left: 0; width: 100%; 
+            padding: 10px 5%; box-sizing: border-box;
+            background: linear-gradient(to bottom, rgba(10,10,10,1), rgba(10,10,10,0));
+            z-index: 90;
+        }
         .back-btn {
-            position: fixed; top: 110px; left: 50px; z-index: 50;
-            font-size: 0.8rem; color: #666; cursor: pointer; display: flex; align-items: center; gap: 8px;
-            transition: color 0.3s;
+            font-size: 0.7rem; color: #888; display: inline-flex; align-items: center; gap: 5px;
+            padding: 8px 15px; border: 1px solid #333; border-radius: 20px; background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
         }
-        .back-btn:hover { color: #fff; }
 
-        footer { text-align: center; padding: 50px 0; color: #444; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 50px; }
-
-        @media (max-width: 768px) {
-            header { padding: 20px; flex-direction: row; align-items: center; gap: 0; }
-            .auction-date { display: none; }
-            h1 { font-size: 1rem; letter-spacing: 2px; }
-            .brand-subtitle { font-size: 0.5rem; }
-            
-            .gallery-wrapper { padding-top: 120px; }
-            .gallery-container { gap: 100px; }
-            .frame-assembly { padding: 25px; border-width: 8px; }
-            .frame-assembly::before { top: 25px; bottom: 25px; left: 25px; right: 25px; }
-            .artwork { width: 70vw; height: auto; max-height: 55vh; }
-            
-            #view-detail { padding: 120px 20px 50px; }
-            .detail-container { flex-direction: column; gap: 40px; }
-            .detail-title { font-size: 1.8rem; }
-            .back-btn { top: 85px; left: 20px; }
-            .nav-links a { font-size: 1.8rem; }
+        .detail-scroll-container {
+            width: 100%;
+            box-sizing: border-box;
+            padding-top: 0; /* 图片顶满 */
         }
+
+        /* 详情页图片：顶满屏幕，去除边框僵硬感 */
+        .detail-image-wrapper {
+            width: 100%; 
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .detail-frame {
+            width: 100%; 
+            /* 这里的 padding 和 border 去掉，模仿 Instagram/小红书的全屏感 */
+            padding: 0; border: none; background: none; box-shadow: none;
+        }
+        
+        .detail-art {
+            width: 100%; 
+            height: auto; 
+            max-height: 75vh; /* 稍微限制高度，方便露出下面的文字 */
+            object-fit: contain; /* 改为 contain 确保画作完整，或者 cover 铺满 */
+            background: #000; /* 图片加载前的底色 */
+            /* 底部增加渐变遮罩，让图片和下方文字融合更自然 */
+            mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+        }
+
+        /* 详情页信息区域 */
+        .detail-content {
+            padding: 0 25px 80px 25px; /* 左右留白，底部留出按钮空间 */
+            margin-top: -20px; /* 往上提一点，压在图片渐变上 */
+            position: relative;
+            z-index: 10;
+        }
+
+        .d-lot { color: var(--accent-gold); font-size: 0.7rem; letter-spacing: 2px; font-weight: bold; }
+        .d-title { font-family: var(--font-chinese); font-size: 1.8rem; color: #fff; margin: 10px 0 5px 0; line-height: 1.2; }
+        .d-eng { font-family: var(--font-serif); font-style: italic; color: #666; font-size: 0.9rem; margin-bottom: 30px; }
+
+        /* 信息网格 */
+        .info-grid {
+            display: grid; grid-template-columns: 1fr; gap: 15px;
+            border-top: 1px solid #222; border-bottom: 1px solid #222;
+            padding: 20px 0; margin-bottom: 30px;
+        }
+        .info-row { display: flex; justify-content: space-between; align-items: baseline; }
+        .info-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+        .info-val { font-size: 0.8rem; color: #ccc; text-align: right; max-width: 60%; }
+
+        /* 文章段落 */
+        .article-section h4 {
+            color: var(--accent-gold); font-size: 0.7rem; letter-spacing: 1px; 
+            margin: 40px 0 15px 0; text-transform: uppercase;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .article-section h4::after { content: ''; flex: 1; height: 1px; background: #222; }
+        .article-section p { font-size: 0.95rem; line-height: 1.8; color: #aaa; margin-bottom: 20px; text-align: justify; }
+
+        /* 底部固定按钮栏 */
+        .sticky-footer {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            padding: 15px 25px 25px; box-sizing: border-box;
+            background: linear-gradient(to top, #000 80%, transparent);
+            z-index: 90;
+        }
+        .bid-btn {
+            width: 100%; background: var(--accent-gold); border: none;
+            padding: 16px; font-family: var(--font-display); font-size: 1rem; letter-spacing: 2px;
+            color: #000; border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(207, 181, 59, 0.2);
+            transition: transform 0.1s;
+        }
+        .bid-btn:active { transform: scale(0.98); }
+
+        /* --- 弹窗样式 --- */
+        .bid-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: 0.3s; padding: 40px; box-sizing: border-box;
+        }
+        .bid-overlay.active { opacity: 1; visibility: visible; }
+        .progress-wrap { width: 100%; height: 2px; background: #333; margin: 20px 0; border-radius: 2px; overflow: hidden; }
+        .progress-bar { width: 0; height: 100%; background: var(--accent-gold); transition: width 0.3s ease-out; }
+        .status-text { font-family: monospace; color: var(--accent-gold); font-size: 0.8rem; }
+        .result-text { color: #fff; font-size: 1.1rem; line-height: 1.6; text-align: center; margin-top: 20px; }
+        .close-modal { margin-top: 40px; background: transparent; border: 1px solid #444; color: #888; padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; display: none; }
+
+        /* 桌面适配微调 (Desktop Fixes) */
+        @media (min-width: 769px) {
+            /* 桌面端还是保持之前的左右布局更好看，这里稍微兼容一下 */
+            .detail-image-wrapper { max-width: 50%; margin: 0 auto 40px; }
+            .detail-content { max-width: 600px; margin: 0 auto; }
+            .sticky-footer { position: relative; background: none; padding: 0; margin-top: 50px; }
+            .frame-assembly { padding: 60px; } /* 桌面端相框加回来 */
+        }
+
     </style>
 </head>
 <body>
 
     <div class="noise-overlay"></div>
-    <div class="dust-container" id="dustContainer"></div>
 
-    <!-- 竞拍进度全屏弹窗 -->
-    <div class="bid-overlay" id="bidOverlay">
-        <div class="bid-modal">
-            <div class="bid-title">PROCESSING BID...</div>
-            <div class="progress-container">
-                <div class="progress-bar" id="bidProgressBar"></div>
-            </div>
-            <div class="bid-status" id="bidStatus">初始化连接...</div>
-            <div class="bid-result" id="bidResult"></div>
-            <button class="modal-close-btn" id="bidCloseBtn" onclick="closeBidModal()">关闭窗口</button>
-        </div>
-    </div>
-
-    <!-- 全屏导航菜单 -->
+    <!-- 导航菜单 -->
     <div class="nav-overlay" id="navOverlay">
-        <div class="close-btn" onclick="toggleMenu()">&times;</div>
+        <div class="close-btn" onclick="toggleMenu()">×</div>
         <ul class="nav-links">
-            <li><a href="#" onclick="toggleMenu(); switchPage('home');">当季拍卖</a><span>剁手预警 / Live Auction</span></li>
-            <li><a href="#" onclick="toggleMenu(); alert('您的余额不足，请充值猫粮。');">私人洽购</a><span>VVIP 专享通道 / Private Sales</span></li>
-            <li><a href="#" onclick="toggleMenu(); alert('专家正在睡觉，请勿打扰。');">藏品估值</a><span>看看你家猫值多少 / Valuation</span></li>
-            <li><a href="#" onclick="toggleMenu(); alert('我们部门全是猫，没人接电话。');">专家部门</a><span>撸猫锦标赛 / Departments</span></li>
+            <li><a href="#" onclick="toggleMenu(); switchPage('home');">当季拍卖</a></li>
+            <li><a href="#" onclick="toggleMenu(); alert('VIP 专享通道，请出示猫条。');">私人洽购</a></li>
+            <li><a href="#" onclick="toggleMenu(); alert('估价师正在午睡。');">藏品估值</a></li>
+            <li><a href="#" onclick="toggleMenu();">专家部门</a></li>
         </ul>
     </div>
 
+    <!-- 竞拍弹窗 -->
+    <div class="bid-overlay" id="bidOverlay">
+        <div style="width:100%">
+            <div class="status-text" id="bidStatus">INITIALIZING...</div>
+            <div class="progress-wrap"><div class="progress-bar" id="bidBar"></div></div>
+            <div class="result-text" id="bidResult"></div>
+            <center><button class="close-modal" id="bidClose" onclick="closeBid()">关闭 / CLOSE</button></center>
+        </div>
+    </div>
+
+    <!-- 顶部 Header -->
     <header>
-        <div onclick="switchPage('home')">
+        <div>
             <h1>Sotheby's Meow</h1>
             <div class="brand-subtitle">Fine Art & Rare Collectibles</div>
         </div>
-        <div class="header-right">
-            <div class="menu-btn" onclick="toggleMenu()">
-                MENU
-                <div class="hamburger-lines"><div class="line"></div><div class="line"></div></div>
-            </div>
-            <div class="auction-date">PRIVATE VIEWING<br>New York · London · Hong Kong</div>
+        <div class="menu-btn" onclick="toggleMenu()">
+            MENU
+            <div class="hamburger-lines"><div class="line"></div><div class="line"></div></div>
         </div>
     </header>
 
-    <!-- 页面 1: 首页画廊 -->
+    <!-- 首页 -->
     <div id="view-home" class="page-view page-active">
         <div class="gallery-wrapper">
             <div class="gallery-container">
-
-                <!-- 拍品 1 -->
-                <div class="lot-item" onclick="showDetail(1)">
-                    <div class="frame-assembly">
-                        <img src="images/1.png" alt="Cat Art 1" class="artwork">
-                    </div>
-                    <div class="lot-info">
-                        <span class="lot-number">LOT 081</span>
-                        <h3 class="lot-title">"请批评"</h3>
-                        <div class="lot-price">Est. $3,500,000 - 5,000,000</div>
-                        <div class="click-hint">[ 点击鉴赏 ]</div>
-                    </div>
-                </div>
-
-                <!-- 拍品 2 -->
-                <div class="lot-item" onclick="showDetail(2)">
-                    <div class="frame-assembly">
-                        <img src="images/2.png" alt="Cat Art 2" class="artwork">
-                    </div>
-                    <div class="lot-info">
-                        <span class="lot-number">LOT 082</span>
-                        <h3 class="lot-title">"恶魔之眼"</h3>
-                        <div class="lot-price">Est. $880,000</div>
-                        <div class="click-hint">[ 点击鉴赏 ]</div>
-                    </div>
-                </div>
-                
-                 <!-- 拍品 3 -->
-                 <div class="lot-item" onclick="showDetail(3)">
-                    <div class="frame-assembly">
-                        <img src="images/3.jpg" alt="Cat Art 3" class="artwork">
-                    </div>
-                    <div class="lot-info">
-                        <span class="lot-number">LOT 083</span>
-                        <h3 class="lot-title">"识破"</h3>
-                        <div class="lot-price">Price on Request</div>
-                        <div class="click-hint">[ 点击鉴赏 ]</div>
-                    </div>
-                </div>
-
-                <!-- 拍品 4 -->
-                <div class="lot-item" onclick="showDetail(4)">
-                    <div class="frame-assembly">
-                        <img src="images/4.jpg" alt="Cat Art 4" class="artwork">
-                    </div>
-                    <div class="lot-info">
-                        <span class="lot-number">LOT 084</span>
-                        <h3 class="lot-title">"这题我会"</h3>
-                        <div class="lot-price">Sold for 100 tons of Tuna</div>
-                        <div class="click-hint">[ 点击鉴赏 ]</div>
-                    </div>
-                </div>
-
-                <!-- 拍品 5 -->
-                <div class="lot-item" onclick="showDetail(5)">
-                    <div class="frame-assembly">
-                        <img src="images/5.jpg" alt="Cat Art 5" class="artwork">
-                    </div>
-                    <div class="lot-info">
-                        <span class="lot-number">LOT 085</span>
-                        <h3 class="lot-title">"幽灵"</h3>
-                        <div class="lot-price">Est. $1,200,000</div>
-                        <div class="click-hint">[ 点击鉴赏 ]</div>
-                    </div>
-                </div>
-
+                <!-- 动态生成内容 -->
             </div>
         </div>
-        <footer>
-            <div>Catalogue Reference: MEOW-2025-AUTUMN</div>
-        </footer>
+        <div style="text-align: center; color: #444; font-size: 0.6rem; padding-bottom: 40px;">
+            MEOW-2025-AUTUMN · END OF LIST
+        </div>
     </div>
 
-    <!-- 页面 2: 详情页 -->
+    <!-- 详情页 -->
     <div id="view-detail" class="page-view page-hidden">
+        <div class="back-bar">
+            <div class="back-btn" onclick="switchPage('home')">← 返回列表</div>
+        </div>
         
-        <div class="back-btn" onclick="switchPage('home')">
-            &larr; 返回拍卖会场
+        <div class="detail-scroll-container">
+            <!-- 图片区：顶满，无边框 -->
+            <div class="detail-image-wrapper">
+                <img id="d-img" class="detail-art" src="" alt="">
+            </div>
+            
+            <!-- 内容区 -->
+            <div class="detail-content">
+                <div class="d-lot" id="d-lot">LOT 000</div>
+                <div class="d-title" id="d-title">Title</div>
+                <div class="d-eng" id="d-eng">English Title</div>
+                
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Artist</span>
+                        <span class="info-val" id="d-artist">Unknown</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Year</span>
+                        <span class="info-val" id="d-year">2024</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Estimate</span>
+                        <span class="info-val" id="d-price">Price</span>
+                    </div>
+                </div>
+
+                <div class="article-section">
+                    <h4>Catalogue Note</h4>
+                    <p id="d-note">Note content...</p>
+                    
+                    <h4>Provenance</h4>
+                    <p id="d-prov">Provenance content...</p>
+                    
+                    <h4>Condition Report</h4>
+                    <p id="d-cond">Condition content...</p>
+                </div>
+            </div>
+            
+            <!-- 底部留白，防遮挡 -->
+            <div style="height: 100px;"></div>
         </div>
 
-        <div class="detail-container">
-            <!-- 左侧图 -->
-            <div class="detail-image-wrapper">
-                <div class="frame-assembly">
-                    <img src="" alt="Detail Art" class="artwork" id="detail-img">
-                </div>
-            </div>
-
-            <!-- 右侧文 -->
-            <div class="detail-info-wrapper">
-                <span class="detail-lot-no" id="detail-lot-no">LOT 000</span>
-                <h1 class="detail-title" id="detail-title">标题加载中...</h1>
-                <span class="detail-eng-title" id="detail-eng-title">English Title Loading...</span>
-                
-                <div class="detail-meta">
-                    <div><strong>艺术家 / ARTIST</strong><span id="detail-artist">Unknown</span></div>
-                    <div><strong>年份 / YEAR</strong><span id="detail-year">2024</span></div>
-                    <div><strong>媒介 / MEDIUM</strong><span id="detail-medium">Cat on Sofa</span></div>
-                </div>
-
-                <div class="detail-desc">
-                    <div class="detail-subtitle">专家指南 / CATALOGUE NOTE</div>
-                    <p id="detail-note">内容加载中...</p>
-                    
-                    <div class="detail-subtitle">来源 / PROVENANCE</div>
-                    <p id="detail-provenance">来源加载中...</p>
-
-                    <div class="detail-subtitle">状况报告 / CONDITION REPORT</div>
-                    <p id="detail-condition">状况加载中...</p>
-                </div>
-
-                <button class="bid-btn" onclick="startBidding()">参与竞拍 / PLACE BID</button>
-            </div>
+        <!-- 固定底部的竞拍按钮 -->
+        <div class="sticky-footer">
+            <button class="bid-btn" onclick="startBid()">参与竞拍 / PLACE BID</button>
         </div>
     </div>
 
     <script>
-        const lotsData = {
-            1: {
-                lotNo: "LOT 081",
-                title: "请批评",
-                engTitle: "The Midnight Critique",
-                img: "images/1.png",
-                artist: "匿名大师 (被抓拍)",
-                year: "2024 凌晨3点",
-                medium: "视网膜上的鄙视 / Digital Gaze",
-                note: "这幅名为《请批评》的杰作捕捉了猫咪在午夜时分那种深邃、审视灵魂的眼神。艺术家通过极其细腻的光影处理，展现了猫科动物在面对人类愚蠢行为（比如还没开罐头）时那种既不屑又包容的复杂情感。<br><br>画中猫咪端坐在虚构的审判台上，眼神直视观者，仿佛在进行一场跨越物种的哲学拷问：“你觉得你礼貌吗？”",
-                provenance: "直接得自艺术家本人（用猫粮交换）。<br>显赫的私人收藏，铲屎官的相册。<br>现藏家购自上述来源。",
-                condition: "作品状况极佳。原装像素完好无损。这种级别的精神压迫感在当代艺术市场中极为罕见，建议挂在床头辟邪。"
-            },
-            2: {
-                lotNo: "LOT 082",
-                title: "恶魔之眼",
-                engTitle: "Sauron of the Living Room",
-                img: "images/2.png",
-                artist: "Orange Chaos (橘色混沌)",
-                year: "2023",
-                medium: "纯粹的破坏欲 / Pure Destruction",
-                note: "这是一张极其珍贵的抓拍，记录了“跑酷模式”启动前0.5秒的宁静。那只眼睛里燃烧的不是普通的火，是对客厅花瓶、窗帘以及你刚买的皮沙发的终极审判。<br><br>专家提示：凝视这幅画超过30秒，你可能会听到玻璃破碎的幻听。",
-                provenance: "发现于犯罪现场（被打翻的水杯旁）。<br>前任主人因无法承受其破坏力而忍痛割爱。",
-                condition: "画面自带高能预警。由于拍摄者当时手在发抖，边缘略显模糊，但这更增添了临场恐惧感。"
-            },
-            3: {
-                lotNo: "LOT 083",
-                title: "识破",
-                engTitle: "The Treat Jar Heist (Busted)",
-                img: "images/3.jpg",
-                artist: "Smarty Pants",
-                year: "2024",
-                medium: "尴尬与不失礼貌的微笑",
-                note: "当你假装扔球但其实球还在手里时，猫咪露出的就是这种表情。这幅作品深刻地讽刺了人类智商的局限性，以及猫科动物看穿一切后的淡然。<br><br>它在说：“你可以骗过狗，但你骗不了我，两脚兽。”",
-                provenance: "来源于一次失败的欺诈实验。<br>现藏于“人类愚蠢行为博物馆”。",
-                condition: "眼神犀利，穿透力极强。建议不要在吃独食的时候观赏此画。"
-            },
-            4: {
-                lotNo: "LOT 084",
-                title: "这题我会",
-                engTitle: "Quantum Mechanics of Naps",
-                img: "images/4.jpg",
-                artist: "Professor Meow",
-                year: "2022",
-                medium: "知识的重量 / Heavy Knowledge",
-                note: "这是一位正在思考“薛定谔的猫”是否真的存在的学者。它的一只爪子搭在书上，象征着对知识的掌控；另一只爪子即使没拍到，我们也能猜到它准备把书推下去。<br><br>这幅画完美诠释了“学海无涯，回头是岸，不如睡觉”的学术精神。",
-                provenance: "从常青藤名校图书馆管理员处购得（它当时正在占座）。",
-                condition: "书页上有轻微的口水痕迹和猫抓痕，这被视为真迹的重要鉴定点。"
-            },
-            5: {
-                lotNo: "LOT 085",
-                title: "幽灵",
-                engTitle: "The Phantom of the Zoomies",
-                img: "images/5.jpg",
-                artist: "Speed Demon",
-                year: "2025 (Future)",
-                medium: "残影 / Motion Blur",
-                note: "这不是一张废片，这是超越了快门的艺术。艺术家通过极速的运动，将肉体凡胎化为一道光影，挑战了摄影术的极限。<br><br>这幅画捕捉的是猫咪在半夜三点突然发疯、在屋里极速漂移的瞬间。你看到的不是猫，是风，是电，是神话。",
-                provenance: "无人知晓来源，因为它太快了，根本抓不住。",
-                condition: "极其模糊，但懂的人自然懂。建议佩戴动态视力眼镜观看。"
+        // 数据源
+        const db = [
+            { id:1, img: 'images/1.png', lot: 'LOT 081', title: '请批评', eng: 'The Midnight Critique', artist: 'Unknown Master', year: '2024', price: '$3.5M - 5M', note: '这幅杰作捕捉了猫咪在午夜时分那种审视灵魂的眼神。画中猫咪端坐在虚构的审判台上，眼神直视观者，仿佛在进行一场跨越物种的哲学拷问：“你觉得你礼貌吗？”', prov: '直接得自艺术家本人（用猫粮交换）。', cond: '作品状况极佳，原装像素完好。' },
+            { id:2, img: 'images/2.png', lot: 'LOT 082', title: '恶魔之眼', eng: 'Sauron of the Living Room', artist: 'Orange Chaos', year: '2023', price: '$880,000', note: '记录了“跑酷模式”启动前0.5秒的宁静。那只眼睛里燃烧的不是普通的火，是对客厅花瓶的终极审判。', prov: '发现于犯罪现场。', cond: '自带高能预警，边缘略显模糊。' },
+            { id:3, img: 'images/3.jpg', lot: 'LOT 083', title: '识破', eng: 'The Treat Jar Heist', artist: 'Smarty Pants', year: '2024', price: 'Invaluable', note: '当你假装扔球但其实球还在手里时，猫咪露出的就是这种表情。深刻讽刺了人类智商的局限性。', prov: '人类愚蠢行为博物馆。', cond: '眼神犀利，穿透力极强。' },
+            { id:4, img: 'images/4.jpg', lot: 'LOT 084', title: '这题我会', eng: 'Quantum Mechanics of Naps', artist: 'Prof. Meow', year: '2022', price: '100 Tons Tuna', note: '一只爪子搭在书上，象征着对知识的掌控；另一只爪子准备把书推下去。完美诠释了“学海无涯，回头是岸”的精神。', prov: '常青藤图书馆管理员。', cond: '书页上有轻微口水痕迹。' },
+            { id:5, img: 'images/5.jpg', lot: 'LOT 085', title: '幽灵', eng: 'Phantom of Zoomies', artist: 'Speed Demon', year: '2025', price: '$1.2M', note: '这不是废片，这是超越了快门的艺术。捕捉的是猫咪半夜三点极速漂移的瞬间。你看到的不是猫，是风。', prov: '无人知晓，因为它太快了。', cond: '极其模糊，懂的都懂。' }
+        ];
+
+        // 初始化首页
+        const container = document.querySelector('.gallery-container');
+        db.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'lot-item';
+            div.onclick = () => openDetail(item);
+            div.innerHTML = `
+                <div class="frame-assembly">
+                    <img src="${item.img}" class="artwork" loading="lazy">
+                </div>
+                <div class="lot-info">
+                    <span class="lot-number">${item.lot}</span>
+                    <div class="lot-title">${item.title}</div>
+                    <div class="lot-price">Est. ${item.price}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        // 切换页面逻辑
+        function switchPage(to) {
+            const home = document.getElementById('view-home');
+            const detail = document.getElementById('view-detail');
+            
+            window.scrollTo(0,0); // 物理重置
+
+            if(to === 'detail') {
+                home.classList.remove('page-active');
+                home.classList.add('page-hidden');
+                detail.classList.remove('page-hidden');
+                detail.classList.add('page-active');
+            } else {
+                detail.classList.remove('page-active');
+                detail.classList.add('page-hidden');
+                home.classList.remove('page-hidden');
+                home.classList.add('page-active');
             }
-        };
+        }
 
-        function showDetail(id) {
-            const data = lotsData[id];
-            if (!data) return;
-
-            document.getElementById('detail-img').src = data.img;
-            document.getElementById('detail-lot-no').innerText = data.lotNo;
-            document.getElementById('detail-title').innerText = data.title;
-            document.getElementById('detail-eng-title').innerText = data.engTitle;
-            document.getElementById('detail-artist').innerText = data.artist;
-            document.getElementById('detail-year').innerText = data.year;
-            document.getElementById('detail-medium').innerText = data.medium;
-            document.getElementById('detail-note').innerHTML = data.note;
-            document.getElementById('detail-provenance').innerHTML = data.provenance;
-            document.getElementById('detail-condition').innerHTML = data.condition;
-
+        // 打开详情页填充数据
+        function openDetail(data) {
+            document.getElementById('d-img').src = data.img;
+            document.getElementById('d-lot').innerText = data.lot;
+            document.getElementById('d-title').innerText = data.title;
+            document.getElementById('d-eng').innerText = data.eng;
+            document.getElementById('d-artist').innerText = data.artist;
+            document.getElementById('d-year').innerText = data.year;
+            document.getElementById('d-price').innerText = data.price;
+            document.getElementById('d-note').innerText = data.note;
+            document.getElementById('d-prov').innerText = data.prov;
+            document.getElementById('d-cond').innerText = data.cond;
+            
             switchPage('detail');
         }
 
-        function switchPage(pageName) {
-            const homeView = document.getElementById('view-home');
-            const detailView = document.getElementById('view-detail');
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            if (pageName === 'detail') {
-                homeView.classList.remove('page-active');
-                homeView.classList.add('page-hidden');
-                detailView.classList.remove('page-hidden');
-                detailView.classList.add('page-active');
-            } else {
-                detailView.classList.remove('page-active');
-                detailView.classList.add('page-hidden');
-                homeView.classList.remove('page-hidden');
-                homeView.classList.add('page-active');
-            }
-        }
-
+        // 菜单逻辑
         function toggleMenu() {
             document.getElementById('navOverlay').classList.toggle('active');
         }
 
-        // --- 新版：竞拍进度条动画逻辑 ---
-        function startBidding() {
+        // 竞拍逻辑
+        function startBid() {
             const overlay = document.getElementById('bidOverlay');
-            const bar = document.getElementById('bidProgressBar');
+            const bar = document.getElementById('bidBar');
             const status = document.getElementById('bidStatus');
             const result = document.getElementById('bidResult');
-            const closeBtn = document.getElementById('bidCloseBtn');
-            
-            // 重置状态
+            const closeBtn = document.getElementById('bidClose');
+
             overlay.classList.add('active');
             bar.style.width = '0%';
-            status.innerText = "正在连接喵星卫星 (MeowSat-1)...";
-            result.style.display = 'none';
+            result.innerText = '';
             closeBtn.style.display = 'none';
-            
-            // 模拟进度动画
-            setTimeout(() => {
-                bar.style.width = '30%';
-                status.innerText = "正在验证猫粮余额 (Checking Balance)...";
-            }, 600);
+            status.innerText = 'CONNECTING SATELLITE...';
 
-            setTimeout(() => {
-                bar.style.width = '70%';
-                status.innerText = "正在贿赂拍卖官 (Bribing Auctioneer)...";
-            }, 1500);
-
-            setTimeout(() => {
-                bar.style.width = '100%';
-                status.innerText = "竞拍完成";
-                showBidResult(); // 进度条跑完显示结果
-            }, 2600);
+            setTimeout(() => { bar.style.width = '40%'; status.innerText = 'VERIFYING TUNA ASSETS...'; }, 500);
+            setTimeout(() => { bar.style.width = '80%'; status.innerText = 'BRIBING AUCTIONEER...'; }, 1500);
+            setTimeout(() => { 
+                bar.style.width = '100%'; 
+                status.innerText = 'COMPLETE'; 
+                
+                const msgs = [
+                    "恭喜！您是最高出价者。\n代价是终身铲屎。",
+                    "出价失败。\n系统检测到您刚摸过别人家的狗。",
+                    "警告：出价过高，\n猫咪感到压力很大并躲到了床底。",
+                    "成交！\n您获得了一根尊贵的猫胡须。"
+                ];
+                result.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+                closeBtn.style.display = 'block';
+            }, 2500);
         }
 
-        function showBidResult() {
-            const alerts = [
-                "竞拍成功！<br>您出价：500个顶级金枪鱼罐头。<br>猫咪表示考虑一下。",
-                "竞拍失败。<br>理由：您的信誉分不足（上次撸猫没给小费）。<br>系统拒绝了您的请求。",
-                "警告！<br>由于您出价过高，猫咪感到压力很大，<br>已经躲到了床底下。",
-                "恭喜！<br>您现在是最高出价者。<br>代价是出卖灵魂给猫主子，终身铲屎。",
-                "系统错误。<br>检测到您家里已经有狗了。<br>根据《喵星反垄断法》，禁止竞拍。",
-                "成交！<br>您获得了一根珍贵的猫胡须。<br>请在3个工作日内支付小鱼干。"
-            ];
-            const randomMsg = alerts[Math.floor(Math.random() * alerts.length)];
-            
-            const result = document.getElementById('bidResult');
-            const closeBtn = document.getElementById('bidCloseBtn');
-            
-            result.innerHTML = randomMsg;
-            result.style.display = 'block';
-            closeBtn.style.display = 'inline-block';
-        }
-
-        function closeBidModal() {
+        function closeBid() {
             document.getElementById('bidOverlay').classList.remove('active');
         }
 
-        const dustContainer = document.getElementById('dustContainer');
-        for (let i = 0; i < 30; i++) {
-            const dust = document.createElement('div');
-            dust.classList.add('dust');
-            const size = Math.random() * 3 + 1;
-            dust.style.width = `${size}px`; dust.style.height = `${size}px`;
-            dust.style.left = `${Math.random() * 100}vw`; dust.style.top = `${Math.random() * 100}vh`;
-            dust.style.animationDuration = `${Math.random() * 10 + 10}s`;
-            dust.style.animationDelay = `-${Math.random() * 5}s`;
-            dustContainer.appendChild(dust);
-        }
     </script>
 </body>
 </html>
