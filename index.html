@@ -21,6 +21,7 @@
             --font-serif: 'Playfair Display', serif;
             --font-display: 'Cinzel', serif;
             --font-chinese: 'Noto Serif SC', serif;
+            --stamp-red: #d32f2f;
         }
 
         body {
@@ -32,7 +33,6 @@
             min-height: 100vh;
             cursor: default; 
             -webkit-tap-highlight-color: transparent;
-            /* 手机端防回弹效果 */
             overscroll-behavior-y: none; 
         }
 
@@ -41,6 +41,12 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 0; opacity: 0.04; 
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* --- 特效: 烟花画布 --- */
+        #fireworksCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; /* 最顶层 */
         }
 
         /* --- 页面容器 (核心交互) --- */
@@ -54,13 +60,13 @@
         
         .page-hidden { 
             opacity: 0; pointer-events: none; visibility: hidden; 
-            transform: translateY(20px); /* 加上一点位移让切换更有动感 */
-            position: fixed; /* 彻底脱离文档流 */
+            transform: translateY(20px); 
+            position: fixed; 
         }
         .page-active { 
             opacity: 1; pointer-events: auto; visibility: visible; 
             transform: translateY(0);
-            position: absolute; /* 恢复 */
+            position: absolute; 
         }
 
         /* --- 顶部导航栏 --- */
@@ -91,6 +97,21 @@
         .hamburger-lines { width: 14px; display: flex; flex-direction: column; gap: 3px; }
         .line { width: 100%; height: 1px; background-color: #fff; }
 
+        /* --- 实时竞价弹幕 (Live Ticker) --- */
+        .live-ticker {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+            background: rgba(207, 181, 59, 0.15); border: 1px solid rgba(207, 181, 59, 0.3);
+            padding: 8px 15px; border-radius: 20px;
+            display: flex; align-items: center; gap: 8px;
+            color: var(--accent-gold); font-size: 0.7rem; font-family: 'Noto Serif SC', serif;
+            z-index: 95; backdrop-filter: blur(4px);
+            opacity: 0; transition: all 0.5s ease; pointer-events: none;
+            white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .live-ticker.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .live-dot { width: 6px; height: 6px; background: var(--accent-gold); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
         /* --- 全屏导航遮罩 --- */
         .nav-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -105,7 +126,6 @@
         .nav-links { list-style: none; padding: 0; margin: 0; text-align: center; }
         .nav-links li { margin: 25px 0; opacity: 0; transform: translateY(10px); transition: 0.4s; }
         .nav-overlay.active .nav-links li { opacity: 1; transform: translateY(0); }
-        /* 依次延迟 */
         .nav-overlay.active li:nth-child(1) { transition-delay: 0.1s; }
         .nav-overlay.active li:nth-child(2) { transition-delay: 0.15s; }
         .nav-overlay.active li:nth-child(3) { transition-delay: 0.2s; }
@@ -122,7 +142,6 @@
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 首页相框 (保持高级感) */
         .frame-assembly {
             position: relative; background-color: #f4f0e6; padding: 30px; 
             border: 8px solid #1a1a1a; outline: 1px solid #cfb53b; outline-offset: -4px; 
@@ -133,25 +152,19 @@
             box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3); border: 1px solid rgba(0,0,0,0.1); pointer-events: none; z-index: 2;
         }
         
-        /* 图片统一 */
         .artwork {
             display: block; width: 100%; height: auto; aspect-ratio: 3/4;
             object-fit: cover; filter: sepia(5%) contrast(1.1); 
             position: relative; z-index: 1;
         }
 
-        /* 首页信息 */
         .lot-info { text-align: center; margin-top: 25px; opacity: 0.8; }
         .lot-number { font-size: 0.6rem; color: var(--accent-gold); letter-spacing: 2px; display: block; margin-bottom: 5px; }
         .lot-title { font-family: var(--font-chinese); font-size: 1.3rem; color: #fff; margin: 0 0 5px 0; }
         .lot-price { font-size: 0.7rem; color: #666; font-family: 'Helvetica Neue'; }
 
         /* --- 详情页 (Mobile Optimized) --- */
-        #view-detail { 
-            /* 去掉多余的顶部 padding，利用 sticky header */
-            padding: 0; 
-            background: var(--bg-color);
-        }
+        #view-detail { padding: 0; background: var(--bg-color); }
         
         .back-bar {
             position: fixed; top: 80px; left: 0; width: 100%; 
@@ -166,48 +179,40 @@
         }
 
         .detail-scroll-container {
-            width: 100%;
-            box-sizing: border-box;
-            padding-top: 0; /* 图片顶满 */
+            width: 100%; box-sizing: border-box; padding-top: 0;
         }
 
-        /* 详情页图片：顶满屏幕，去除边框僵硬感 */
         .detail-image-wrapper {
-            width: 100%; 
-            margin-bottom: 30px;
-            position: relative;
-        }
-        
-        .detail-frame {
-            width: 100%; 
-            /* 这里的 padding 和 border 去掉，模仿 Instagram/小红书的全屏感 */
-            padding: 0; border: none; background: none; box-shadow: none;
+            width: 100%; margin-bottom: 30px; position: relative;
         }
         
         .detail-art {
-            width: 100%; 
-            height: auto; 
-            max-height: 75vh; /* 稍微限制高度，方便露出下面的文字 */
-            object-fit: contain; /* 改为 contain 确保画作完整，或者 cover 铺满 */
-            background: #000; /* 图片加载前的底色 */
-            /* 底部增加渐变遮罩，让图片和下方文字融合更自然 */
+            width: 100%; height: auto; max-height: 75vh; object-fit: contain;
+            background: #000;
             mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
         }
 
-        /* 详情页信息区域 */
+        /* 详情页：SOLD 印章 */
+        .sold-stamp {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg) scale(3);
+            border: 5px solid var(--stamp-red); color: var(--stamp-red);
+            font-family: var(--font-display); font-weight: bold; font-size: 4rem;
+            padding: 10px 30px; text-transform: uppercase; letter-spacing: 5px;
+            opacity: 0; pointer-events: none; z-index: 20;
+            mix-blend-mode: hard-light;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .sold-stamp.stamped { opacity: 0.8; transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
+
         .detail-content {
-            padding: 0 25px 80px 25px; /* 左右留白，底部留出按钮空间 */
-            margin-top: -20px; /* 往上提一点，压在图片渐变上 */
-            position: relative;
-            z-index: 10;
+            padding: 0 25px 80px 25px; margin-top: -20px; position: relative; z-index: 10;
         }
 
         .d-lot { color: var(--accent-gold); font-size: 0.7rem; letter-spacing: 2px; font-weight: bold; }
         .d-title { font-family: var(--font-chinese); font-size: 1.8rem; color: #fff; margin: 10px 0 5px 0; line-height: 1.2; }
         .d-eng { font-family: var(--font-serif); font-style: italic; color: #666; font-size: 0.9rem; margin-bottom: 30px; }
 
-        /* 信息网格 */
         .info-grid {
             display: grid; grid-template-columns: 1fr; gap: 15px;
             border-top: 1px solid #222; border-bottom: 1px solid #222;
@@ -217,7 +222,6 @@
         .info-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1px; }
         .info-val { font-size: 0.8rem; color: #ccc; text-align: right; max-width: 60%; }
 
-        /* 文章段落 */
         .article-section h4 {
             color: var(--accent-gold); font-size: 0.7rem; letter-spacing: 1px; 
             margin: 40px 0 15px 0; text-transform: uppercase;
@@ -226,7 +230,6 @@
         .article-section h4::after { content: ''; flex: 1; height: 1px; background: #222; }
         .article-section p { font-size: 0.95rem; line-height: 1.8; color: #aaa; margin-bottom: 20px; text-align: justify; }
 
-        /* 底部固定按钮栏 */
         .sticky-footer {
             position: fixed; bottom: 0; left: 0; width: 100%;
             padding: 15px 25px 25px; box-sizing: border-box;
@@ -242,7 +245,7 @@
         }
         .bid-btn:active { transform: scale(0.98); }
 
-        /* --- 弹窗样式 --- */
+        /* --- 弹窗样式 (竞拍 & 专家) --- */
         .bid-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 2000;
@@ -252,43 +255,77 @@
         .bid-overlay.active { opacity: 1; visibility: visible; }
         .progress-wrap { width: 100%; height: 2px; background: #333; margin: 20px 0; border-radius: 2px; overflow: hidden; }
         .progress-bar { width: 0; height: 100%; background: var(--accent-gold); transition: width 0.3s ease-out; }
-        .status-text { font-family: monospace; color: var(--accent-gold); font-size: 0.8rem; }
+        .status-text { font-family: monospace; color: var(--accent-gold); font-size: 0.8rem; text-align: center; line-height: 1.4; }
         .result-text { color: #fff; font-size: 1.1rem; line-height: 1.6; text-align: center; margin-top: 20px; }
         .close-modal { margin-top: 40px; background: transparent; border: 1px solid #444; color: #888; padding: 10px 20px; font-size: 0.8rem; border-radius: 20px; display: none; }
+        
+        /* 专家列表样式 */
+        .expert-list { text-align: left; width: 100%; }
+        .expert-item { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .expert-name { color: var(--accent-gold); font-size: 1rem; margin-bottom: 5px; font-family: var(--font-display); }
+        .expert-title { color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* 桌面适配微调 (Desktop Fixes) */
         @media (min-width: 769px) {
-            /* 桌面端还是保持之前的左右布局更好看，这里稍微兼容一下 */
             .detail-image-wrapper { max-width: 50%; margin: 0 auto 40px; }
             .detail-content { max-width: 600px; margin: 0 auto; }
             .sticky-footer { position: relative; background: none; padding: 0; margin-top: 50px; }
-            .frame-assembly { padding: 60px; } /* 桌面端相框加回来 */
+            .frame-assembly { padding: 60px; } 
         }
-
     </style>
 </head>
 <body>
 
     <div class="noise-overlay"></div>
+    <!-- 烟花画布 -->
+    <canvas id="fireworksCanvas"></canvas>
+
+    <!-- 实时竞价通知 -->
+    <div class="live-ticker" id="liveTicker">
+        <div class="live-dot"></div>
+        <span id="tickerText">Live Bid: ...</span>
+    </div>
 
     <!-- 导航菜单 -->
     <div class="nav-overlay" id="navOverlay">
         <div class="close-btn" onclick="toggleMenu()">×</div>
         <ul class="nav-links">
             <li><a href="#" onclick="toggleMenu(); switchPage('home');">当季拍卖</a></li>
-            <li><a href="#" onclick="toggleMenu(); alert('VIP 专享通道，请出示猫条。');">私人洽购</a></li>
+            <li><a href="#" onclick="checkVipPass();">私人洽购</a></li>
             <li><a href="#" onclick="toggleMenu(); alert('估价师正在午睡。');">藏品估值</a></li>
-            <li><a href="#" onclick="toggleMenu();">专家部门</a></li>
+            <li><a href="#" onclick="showExperts();">专家部门</a></li>
         </ul>
     </div>
 
-    <!-- 竞拍弹窗 -->
+    <!-- 通用弹窗 (用于竞拍 & 专家) -->
     <div class="bid-overlay" id="bidOverlay">
         <div style="width:100%">
-            <div class="status-text" id="bidStatus">INITIALIZING...</div>
-            <div class="progress-wrap"><div class="progress-bar" id="bidBar"></div></div>
-            <div class="result-text" id="bidResult"></div>
-            <center><button class="close-modal" id="bidClose" onclick="closeBid()">关闭 / CLOSE</button></center>
+            <!-- 竞拍内容 -->
+            <div id="bidContent">
+                <div class="status-text" id="bidStatus">INITIALIZING...</div>
+                <div class="progress-wrap"><div class="progress-bar" id="bidBar"></div></div>
+                <div class="result-text" id="bidResult"></div>
+            </div>
+            
+            <!-- 专家内容 -->
+            <div id="expertContent" style="display:none;">
+                <div style="text-align: center; margin-bottom: 30px; color: #fff; font-family: var(--font-chinese); font-size: 1.2rem;">MEOW EXPERTS<br><span style="font-size:0.8rem; color:#666;">专家团队</span></div>
+                <div class="expert-list">
+                    <div class="expert-item">
+                        <div class="expert-name">Dr. Sleepy (大橘)</div>
+                        <div class="expert-title">首席午睡执行官 / Chief Napping Officer</div>
+                    </div>
+                    <div class="expert-item">
+                        <div class="expert-name">Prof. Tuna (黑猫)</div>
+                        <div class="expert-title">高级罐头品鉴师 / Senior Tuna Specialist</div>
+                    </div>
+                    <div class="expert-item">
+                        <div class="expert-name">Agent Chaos (奶牛)</div>
+                        <div class="expert-title">易碎品破坏顾问 / Fragile Item Destroyer</div>
+                    </div>
+                </div>
+            </div>
+
+            <center><button class="close-modal" id="bidClose" onclick="closeBid()" style="display:block; margin-top:30px;">关闭 / CLOSE</button></center>
         </div>
     </div>
 
@@ -323,9 +360,11 @@
         </div>
         
         <div class="detail-scroll-container">
-            <!-- 图片区：顶满，无边框 -->
+            <!-- 图片区 -->
             <div class="detail-image-wrapper">
                 <img id="d-img" class="detail-art" src="" alt="">
+                <!-- SOLD 印章 -->
+                <div id="soldStamp" class="sold-stamp">SOLD</div>
             </div>
             
             <!-- 内容区 -->
@@ -378,7 +417,8 @@
             { id:2, img: 'images/2.png', lot: 'LOT 082', title: '恶魔之眼', eng: 'Sauron of the Living Room', artist: 'Orange Chaos', year: '2023', price: '$880,000', note: '记录了“跑酷模式”启动前0.5秒的宁静。那只眼睛里燃烧的不是普通的火，是对客厅花瓶的终极审判。', prov: '发现于犯罪现场。', cond: '自带高能预警，边缘略显模糊。' },
             { id:3, img: 'images/3.jpg', lot: 'LOT 083', title: '识破', eng: 'The Treat Jar Heist', artist: 'Smarty Pants', year: '2024', price: 'Invaluable', note: '当你假装扔球但其实球还在手里时，猫咪露出的就是这种表情。深刻讽刺了人类智商的局限性。', prov: '人类愚蠢行为博物馆。', cond: '眼神犀利，穿透力极强。' },
             { id:4, img: 'images/4.jpg', lot: 'LOT 084', title: '这题我会', eng: 'Quantum Mechanics of Naps', artist: 'Prof. Meow', year: '2022', price: '100 Tons Tuna', note: '一只爪子搭在书上，象征着对知识的掌控；另一只爪子准备把书推下去。完美诠释了“学海无涯，回头是岸”的精神。', prov: '常青藤图书馆管理员。', cond: '书页上有轻微口水痕迹。' },
-            { id:5, img: 'images/5.jpg', lot: 'LOT 085', title: '幽灵', eng: 'Phantom of Zoomies', artist: 'Speed Demon', year: '2025', price: '$1.2M', note: '这不是废片，这是超越了快门的艺术。捕捉的是猫咪半夜三点极速漂移的瞬间。你看到的不是猫，是风。', prov: '无人知晓，因为它太快了。', cond: '极其模糊，懂的都懂。' }
+            { id:5, img: 'images/5.jpg', lot: 'LOT 085', title: '幽灵', eng: 'Phantom of Zoomies', artist: 'Speed Demon', year: '2025', price: '$1.2M', note: '这不是废片，这是超越了快门的艺术。捕捉的是猫咪半夜三点极速漂移的瞬间。你看到的不是猫，是风。', prov: '无人知晓，因为它太快了。', cond: '极其模糊，懂的都懂。' },
+            { id:6, img: 'images/6.jpg', lot: 'LOT 086', title: '请勿打扰', eng: 'The Art of Ignoring You', artist: 'The Zen Master', year: '2024 (Afternoon)', price: 'Priceless', note: '这件作品展示了猫咪在人类呼唤其名字时，耳朵仅转动0.1度以示“我听到了但我不想理你”的微妙瞬间。艺术家完美捕捉了那种令人窒息的高冷与从容。', prov: '采集自周六早晨的被窝。', cond: '极度高冷，请勿在未携带罐头的情况下擅自观赏。' }
         ];
 
         // 初始化首页
@@ -405,7 +445,7 @@
             const home = document.getElementById('view-home');
             const detail = document.getElementById('view-detail');
             
-            window.scrollTo(0,0); // 物理重置
+            window.scrollTo(0,0); 
 
             if(to === 'detail') {
                 home.classList.remove('page-active');
@@ -433,6 +473,9 @@
             document.getElementById('d-prov').innerText = data.prov;
             document.getElementById('d-cond').innerText = data.cond;
             
+            // 重置印章
+            document.getElementById('soldStamp').classList.remove('stamped');
+
             switchPage('detail');
         }
 
@@ -441,7 +484,30 @@
             document.getElementById('navOverlay').classList.toggle('active');
         }
 
-        // 竞拍逻辑
+        // VIP 密码逻辑
+        function checkVipPass() {
+            toggleMenu(); 
+            setTimeout(() => {
+                const pass = prompt("请输入 VIP 核心密码 (VIP CORE PASSWORD):");
+                if(pass === "977") {
+                    alert("访问准许 ACCESS GRANTED.\n\n恭喜获得：【-5元 巨额优惠券】\n(仅限购买 1000万 以上拍品时使用)");
+                } else {
+                    alert("访问拒绝 ACCESS DENIED.\n\n警报：安保猫正在赶来的路上。");
+                }
+            }, 300);
+        }
+
+        // 显示专家部门
+        function showExperts() {
+            toggleMenu();
+            const overlay = document.getElementById('bidOverlay');
+            document.getElementById('bidContent').style.display = 'none';
+            document.getElementById('expertContent').style.display = 'block';
+            document.getElementById('bidClose').style.display = 'block';
+            overlay.classList.add('active');
+        }
+
+        // 竞拍逻辑 (4秒 + 烟花)
         function startBid() {
             const overlay = document.getElementById('bidOverlay');
             const bar = document.getElementById('bidBar');
@@ -449,32 +515,129 @@
             const result = document.getElementById('bidResult');
             const closeBtn = document.getElementById('bidClose');
 
+            document.getElementById('bidContent').style.display = 'block';
+            document.getElementById('expertContent').style.display = 'none';
+
             overlay.classList.add('active');
             bar.style.width = '0%';
             result.innerText = '';
             closeBtn.style.display = 'none';
-            status.innerText = 'CONNECTING SATELLITE...';
+            
+            status.innerText = 'CONNECTING...';
 
-            setTimeout(() => { bar.style.width = '40%'; status.innerText = 'VERIFYING TUNA ASSETS...'; }, 500);
-            setTimeout(() => { bar.style.width = '80%'; status.innerText = 'BRIBING AUCTIONEER...'; }, 1500);
+            setTimeout(() => { bar.style.width = '40%'; status.innerText = 'VERIFYING ASSETS...'; }, 500);
+            setTimeout(() => { bar.style.width = '80%'; status.innerText = 'BRIBING AUCTIONEER...'; }, 2000);
             setTimeout(() => { 
                 bar.style.width = '100%'; 
                 status.innerText = 'COMPLETE'; 
                 
                 const msgs = [
-                    "恭喜！您是最高出价者。\n代价是终身铲屎。",
-                    "出价失败。\n系统检测到您刚摸过别人家的狗。",
-                    "警告：出价过高，\n猫咪感到压力很大并躲到了床底。",
-                    "成交！\n您获得了一根尊贵的猫胡须。"
+                    { text: "恭喜！成交！\n猫主子已发货。", win: true },
+                    { text: "出价失败。\n系统检测到您刚摸过别人家的狗。", win: false },
+                    { text: "成交！\n您获得了一根尊贵的猫胡须。", win: true },
+                    { text: "警告：\n猫咪感到压力很大并躲到了床底。", win: false }
                 ];
-                result.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+                
+                const outcome = msgs[Math.floor(Math.random() * msgs.length)];
+                result.innerText = outcome.text;
+                
+                if(outcome.win) {
+                    setTimeout(() => {
+                        document.getElementById('soldStamp').classList.add('stamped');
+                        launchFireworks(); // 触发烟花
+                    }, 300); 
+                }
+                
                 closeBtn.style.display = 'block';
-            }, 2500);
+            }, 4000); // 4秒结束
         }
 
         function closeBid() {
             document.getElementById('bidOverlay').classList.remove('active');
         }
+
+        // --- 烟花逻辑 (简单粒子) ---
+        function launchFireworks() {
+            const canvas = document.getElementById('fireworksCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const colors = ['#cfb53b', '#ffffff', '#ffd700', '#ff4500'];
+            
+            function createParticle(x, y) {
+                const count = 100;
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: x, y: y,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: (Math.random() - 0.5) * 10,
+                        alpha: 1,
+                        color: colors[Math.floor(Math.random() * colors.length)]
+                    });
+                }
+            }
+
+            function animate() {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.globalCompositeOperation = 'lighter';
+                
+                for (let i = 0; i < particles.length; i++) {
+                    let p = particles[i];
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.alpha;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.1; // gravity
+                    p.alpha -= 0.01;
+                }
+                
+                // 移除消失的粒子
+                while (particles.length > 0 && particles[0].alpha <= 0) {
+                    particles.shift();
+                }
+                
+                if (particles.length > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            
+            // 在屏幕中心爆炸
+            createParticle(window.innerWidth / 2, window.innerHeight / 2);
+            animate();
+        }
+
+        // --- 实时竞价弹幕逻辑 (更慢) ---
+        const ticker = document.getElementById('liveTicker');
+        const tickerText = document.getElementById('tickerText');
+        const locations = ['纽约', '伦敦', '东京', '巴黎', '上海', '火星'];
+        const buyers = ['匿名藏家', '埃隆·马斯克的猫', '老佛爷的爱宠', '不愿透露姓名的铲屎官'];
+        
+        function showTicker() {
+            const loc = locations[Math.floor(Math.random() * locations.length)];
+            const buyer = buyers[Math.floor(Math.random() * buyers.length)];
+            const price = Math.floor(Math.random() * 900 + 100) + ',000'; 
+            
+            tickerText.innerText = `最新出价: ${buyer} (${loc}) 出价 $${price}`;
+            ticker.classList.add('show');
+            
+            setTimeout(() => {
+                ticker.classList.remove('show');
+            }, 4000); 
+        }
+
+        // 调慢频率: 10-15秒一次
+        setInterval(() => {
+            showTicker();
+        }, Math.random() * 5000 + 10000);
 
     </script>
 </body>
